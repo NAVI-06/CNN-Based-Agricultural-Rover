@@ -1,0 +1,134 @@
+#define BLYNK_TEMPLATE_ID "TMPL36xFpW8d8"
+#define BLYNK_TEMPLATE_NAME "cotton disease rover"
+#define BLYNK_AUTH_TOKEN "B0Y6OEsh0XWMPxz8DggX8F_fHCOhydWH"
+
+#include <SoftwareSerial.h>
+#include <TinyGPS++.h>
+
+TinyGPSPlus gps;
+SoftwareSerial mySerial(5, 18);
+
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+
+WiFiClient client;
+char auth[] = "B0Y6OEsh0XWMPxz8DggX8F_fHCOhydWH";
+char ssid[] = "iotdata";
+char pass[] = "12345678";
+
+double lati,lngi;
+
+#define in1 14
+#define in2 27
+#define in3 26
+#define in4 25
+
+#define rly 13
+
+int front,back,left,right,mot;
+
+BLYNK_WRITE(V0){
+  front=param.asInt();
+  }
+BLYNK_WRITE(V1){
+  back=param.asInt();
+  }
+BLYNK_WRITE(V2){
+  left=param.asInt();
+  }
+BLYNK_WRITE(V3){
+  right=param.asInt();
+  }
+BLYNK_WRITE(V4){
+  mot=param.asInt();
+  }
+  
+void setup() {
+  Serial.begin(9600);
+  
+  mySerial.begin(9600);
+  pinMode(14,OUTPUT);
+  pinMode(27,OUTPUT);
+  pinMode(26,OUTPUT);
+  pinMode(25,OUTPUT);
+  
+  pinMode(13,OUTPUT);
+
+  digitalWrite(14,LOW);
+  digitalWrite(27,LOW);
+  digitalWrite(26,LOW);
+  digitalWrite(25,LOW);
+  digitalWrite(13,LOW);
+  Serial.println("Cponnecting to wifi......");
+  Blynk.begin(auth,ssid,pass);
+  Serial.println("Connected to wifi");
+  
+}
+
+void loop() {
+  
+  Blynk.run();
+  Serial.println("ok");
+  while (mySerial.available() > 0)
+    if (gps.encode(mySerial.read()))
+  if (millis() > 5000 && gps.charsProcessed() < 10)
+  {
+    Serial.println("No GPS detected");
+    while (true);
+  }
+
+  lati=gps.location.lat(), 6;
+  lngi=gps.location.lng(), 6;
+  if(lati<=0){
+    lati=13.26580;
+   }
+   if(lngi<=0){
+    lngi=80.45126;
+    }
+  Serial.print("latitude = ");
+  Serial.println(lati);
+  Serial.print("longitude = ");
+  Serial.println(lngi);
+  if(front==1){
+    digitalWrite(in1,HIGH);
+    digitalWrite(in2,LOW);
+    digitalWrite(in3,HIGH);
+    digitalWrite(in4,LOW);
+    }
+  else if(back==1){
+    digitalWrite(in1,LOW);
+    digitalWrite(in2,HIGH);
+    digitalWrite(in3,LOW);
+    digitalWrite(in4,HIGH);
+    }
+  else if(right==1){
+    digitalWrite(in1,LOW);
+    digitalWrite(in2,HIGH);
+    digitalWrite(in3,HIGH);
+    digitalWrite(in4,LOW);
+    }
+  else if(left==1){
+    digitalWrite(in1,HIGH);
+    digitalWrite(in2,LOW);
+    digitalWrite(in3,LOW);
+    digitalWrite(in4,HIGH);
+    }
+    else
+    {
+     digitalWrite(in1,LOW);
+     digitalWrite(in2,LOW);
+     digitalWrite(in3,LOW);
+     digitalWrite(in4,LOW);
+    }
+
+   if(mot==1){
+    digitalWrite(rly,LOW);
+    }
+    else{
+      digitalWrite(rly,HIGH);
+      }
+
+    Blynk.virtualWrite(V5,lati);
+    Blynk.virtualWrite(V6,lngi);
+}
